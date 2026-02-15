@@ -1,5 +1,6 @@
 import streamlit as st
-import whisper
+import os
+from openai import OpenAI
 from deep_translator import GoogleTranslator
 from gtts import gTTS
 from moviepy.editor import VideoFileClip, AudioFileClip
@@ -7,6 +8,8 @@ from moviepy.editor import VideoFileClip, AudioFileClip
 st.set_page_config(page_title="Smart AI Dubber")
 st.title("Smart AI Dubber")
 st.write("Upload any video and convert it to Tamil or Hindi instantly.")
+
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 uploaded_file = st.file_uploader("Upload Video", type=["mp4"])
 language = st.selectbox("Select Output Language", ["Tamil", "Hindi"])
