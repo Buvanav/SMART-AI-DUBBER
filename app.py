@@ -14,28 +14,26 @@ client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 uploaded_file = st.file_uploader("Upload Video", type=["mp4"])
 language = st.selectbox("Select Output Language", ["Tamil", "Hindi"])
 
+# Load whisper only once
+@st.cache_resource
+def load_whisper_model():
+    return whisper.load_model("tiny")  # tiny model = lighter & faster
+
+model = load_whisper_model()
+
 if uploaded_file is not None:
     st.success("Video Uploaded Successfully!")
 
     if st.button("Process Video"):
+
         try:
             with open("input.mp4", "wb") as f:
                 f.write(uploaded_file.read())
 
             with st.spinner("Processing... Please wait ⏳"):
 
-                # Extract audio from video
-                video = VideoFileClip("input.mp4")
-                video.audio.write_audiofile("audio.mp3")
-
-                # Send audio to OpenAI Whisper API
-                with open("audio.mp3", "rb") as audio_file:
-                    transcript = client.audio.transcriptions.create(
-                        model="gpt-4o-mini-transcribe",
-                        file=audio_file
-                    )
-
-                original_text = transcript.text
+                result = model.transcribe("input.mp4")
+                original_text = result["text"]
 
                 if language == "Tamil":
                     target_lang = "ta"
@@ -50,7 +48,9 @@ if uploaded_file is not None:
                 tts = gTTS(translated_text, lang=target_lang)
                 tts.save("output_audio.mp3")
 
-                final_video = video.set_audio(AudioFileClip("output_audio.mp3"))
+                video = VideoFileClip("input.mp4")
+                audio = AudioFileClip("output_audio.mp3")
+                final_video = video.set_audio(audio)
                 final_video.write_videofile("output.mp4")
 
             st.success("✅ Conversion Completed!")
